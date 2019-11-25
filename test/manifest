@@ -1,0 +1,4 @@
+{"name":"DynamoDB-export","version":3,
+"entries": [
+{"url":"s3://machine-learning-sipaku-dataset/data-pipeline/2019-11-09-08-46-41/c81eaaba-a92c-4f38-9f58-a4c2c4a0246f","mandatory":true}
+]}

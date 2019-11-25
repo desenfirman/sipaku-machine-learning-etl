@@ -1,0 +1,99 @@
+{
+  "objects": [
+    {
+      "period": "1 days",
+      "name": "Every 1 day",
+      "id": "DefaultSchedule",
+      "type": "Schedule",
+      "startAt": "FIRST_ACTIVATION_DATE_TIME"
+    },
+    {
+      "failureAndRerunMode": "CASCADE",
+      "schedule": {
+        "ref": "DefaultSchedule"
+      },
+      "resourceRole": "DataPipelineDefaultResourceRole",
+      "role": "DataPipelineDefaultRole",
+      "pipelineLogUri": "s3://machine-learning-sipaku-dataset/pipeline-logs/",
+      "scheduleType": "cron",
+      "name": "Default",
+      "id": "Default"
+    },
+    {
+      "readThroughputPercent": "#{myDDBReadThroughputRatio}",
+      "name": "DDBSourceTable",
+      "id": "DDBSourceTable",
+      "type": "DynamoDBDataNode",
+      "tableName": "#{myDDBTableName}"
+    },
+    {
+      "name": "EmrClusterForBackup",
+      "coreInstanceType": "m1.medium",
+      "coreInstanceCount": "1",
+      "releaseLabel": "emr-5.13.0",
+      "masterInstanceType": "m1.medium",
+      "id": "EmrClusterForBackup",
+      "region": "#{myDDBRegion}",
+      "type": "EmrCluster",
+      "terminateAfter": "12 Hours"
+    },
+    {
+      "directoryPath": "#{myOutputS3Loc}/#{format(@scheduledStartTime, 'YYYY-MM-dd-HH-mm-ss')}",
+      "name": "S3BackupLocation",
+      "id": "S3BackupLocation",
+      "type": "S3DataNode"
+    },
+    {
+      "output": {
+        "ref": "S3BackupLocation"
+      },
+      "input": {
+        "ref": "DDBSourceTable"
+      },
+      "maximumRetries": "0",
+      "name": "TableBackupActivity",
+      "step": [
+        "s3://dynamodb-emr-#{myDDBRegion}/emr-ddb-storage-handler/2.1.0/emr-ddb-2.1.0.jar,org.apache.hadoop.dynamodb.tools.DynamoDbExport,#{output.directoryPath},#{input.tableName},#{input.readThroughputPercent}",
+        "s3://#{myDDBRegion}.elasticmapreduce/libs/script-runner/script-runner.jar,s3://machine-learning-sipaku-dataset/automation_script.sh,#{output.directoryPath},#{myDDBRegion}"
+      ],
+      "id": "TableBackupActivity",
+      "runsOn": {
+        "ref": "EmrClusterForBackup"
+      },
+      "type": "EmrActivity",
+      "resizeClusterBeforeRunning": "false"
+    }
+  ],
+  "parameters": [
+    {
+      "description": "Output S3 folder",
+      "id": "myOutputS3Loc",
+      "type": "AWS::S3::ObjectKey"
+    },
+    {
+      "description": "Source DynamoDB table name",
+      "id": "myDDBTableName",
+      "type": "String"
+    },
+    {
+      "default": "0.25",
+      "watermark": "Enter value between 0.1-1.0",
+      "description": "DynamoDB read throughput ratio",
+      "id": "myDDBReadThroughputRatio",
+      "type": "Double"
+    },
+    {
+      "default": "us-east-1",
+      "watermark": "us-east-1",
+      "description": "Region of the DynamoDB table",
+      "id": "myDDBRegion",
+      "type": "String"
+    }
+  ],
+  "values": {
+    "myDDBRegion": "us-east-1",
+    "myDDBTableName": "SIPAKUSensorData",
+    "myDDBReadThroughputRatio": "0.25",
+    "myOutputS3Loc": "s3://machine-learning-sipaku-dataset/data-pipeline"
+  }
+}

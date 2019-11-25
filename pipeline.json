@@ -1,23 +1,23 @@
 {
   "objects": [
     {
-      "period": "1 days",
-      "name": "Every 1 day",
-      "id": "DefaultSchedule",
-      "type": "Schedule",
-      "startAt": "FIRST_ACTIVATION_DATE_TIME"
-    },
-    {
       "failureAndRerunMode": "CASCADE",
-      "schedule": {
-        "ref": "DefaultSchedule"
-      },
       "resourceRole": "DataPipelineDefaultResourceRole",
       "role": "DataPipelineDefaultRole",
       "pipelineLogUri": "s3://machine-learning-sipaku-dataset/pipeline-logs/",
-      "scheduleType": "cron",
+      "scheduleType": "ONDEMAND",
       "name": "Default",
       "id": "Default"
+    },
+    {
+      "name": "EmrClusterForBackup",
+      "coreInstanceType": "m4.large",
+      "coreInstanceCount": "1",
+      "releaseLabel": "emr-5.13.0",
+      "id": "EmrClusterForBackup",
+      "region": "#{myDDBRegion}",
+      "type": "EmrCluster",
+      "terminateAfter": "12 Hours"
     },
     {
       "readThroughputPercent": "#{myDDBReadThroughputRatio}",
@@ -25,17 +25,6 @@
       "id": "DDBSourceTable",
       "type": "DynamoDBDataNode",
       "tableName": "#{myDDBTableName}"
-    },
-    {
-      "name": "EmrClusterForBackup",
-      "coreInstanceType": "m1.medium",
-      "coreInstanceCount": "1",
-      "releaseLabel": "emr-5.13.0",
-      "masterInstanceType": "m1.medium",
-      "id": "EmrClusterForBackup",
-      "region": "#{myDDBRegion}",
-      "type": "EmrCluster",
-      "terminateAfter": "12 Hours"
     },
     {
       "directoryPath": "#{myOutputS3Loc}/#{format(@scheduledStartTime, 'YYYY-MM-dd-HH-mm-ss')}",

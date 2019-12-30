@@ -9,6 +9,21 @@ SIPAKU Main Repository:
 
 ## A Brief Repository Structure
 
+```text
+sipaku-machine-learning-etl/
+|
+└───experiment_script/      # some stuff before deploying to AWS DataPipeline
+|
+└───test/                   # test input for running apache hive locally
+|
+|   automation_script.sh    # script for performing ETL & training task
+|   json-serde-...-.jar     # .jar plugin to handle JSONLine format
+|   pipeline.json           # AWS DataPipeline definition template
+|   predict_air_quality.py  # AWS Lambda function to trigger model prediction
+|   README.md               # this file
+
+```
+
 ## Solution Architecture
 
 The following diagram show the overall architecture for Real-Time Prediction feature.
@@ -21,9 +36,11 @@ The following diagram show input and output in Data ETL phase.
 
 ![ETL Diagram](https://i.imgur.com/Cs3ZFmi.jpg)
 
-Sipaku load data from DynamoDB table to EMR cluster machine using AWS DataPipeline Service. AWS DataPipeline provide transformation data from a stream-line DynamoDB into the time-series feature data before passing it into AWS SageMaker. On AWS DataPipeline service, we use a EC2 cluster running Hadoop and Hive as their Map-Reduce tools. The task in EC2 cluster is divided into 2 sub-task. The first task is dumping data from DynamoDB. We use a provided DataPipeline template to perform this operation.
+SIPAKU load data from DynamoDB table to EMR cluster machine using AWS DataPipeline Service. AWS DataPipeline provide transformation data from a stream-line DynamoDB into the time-series feature data before passing it into AWS SageMaker. On AWS DataPipeline service, we use a EC2 cluster running Hadoop and Hive as their Map-Reduce tools. The task in EC2 cluster is divided into 2 sub-task. The first task is dumping data from DynamoDB. We use a provided DataPipeline template to perform this operation.
 
 ![As we can se on this figure, there are 2 step/sub-task in this AWS DataPipeline](https://i.imgur.com/HAXGy6M.png)
+
+The following AWS DataPipeline task definition can be accessed in `pipeline.json` file.
 
 After the first task is complete, we got a dumped data from DynamoDB. But the problem is output of the dumped data is in JSONLine and not in time series format. So we need to transform it into time series feature. We want to utilize some of active EMR cluster resource after the first task is complete. So, we add some new automation script after the first task is complete.
 
@@ -78,5 +95,24 @@ After the DataPipeline phase is completed, then we perform some Machine Learning
 The training task can be achieved from AWS SageMaker Web Console. But we dont want to run training process manually by opening web console after ETL process is complete. Instead, we try to utilize some resource power from last ETL process to run a training task automatically. We run aws-cli inside those machine seamlessly to perform a training [plus] model deployment after ETL task is complete.
 
 ![Training model](https://i.imgur.com/Elvk80L.jpg)
+
+After training process complete, the training model loaded into SageMaker endpoint. The loaded SageMaker endpoint is ready to be accessed by some trigger function.
+
+The source code of data ETL and machine learning train-n-deploy can be accessed in `automation_script.sh` file in this repository.
+
+## Accessing Model Endpoint
+
+We make ETL process and generating prediction to be accessed from trigger function (not as you might it can be done automatically). The reason are we don't want to wasting resources in AWS. So, an admin of this system will trigger this function in admin dashboard.
+
+We use AWS Lambda function to generate a prediction. The function will grab last 6 days data from DynamoDB. Then, those last 6 days data will passed through Sagemaker model endpoint to perform prediction task. The output of the prediction is a next day prediction but we want to generate next 6-days prediction. So, using a next day prediction, we invoke a Sagemaker endpoint 6 times to generate 6 days predicition data. Finally, those 6 days prediction data stored into SIPAKUPredictionData DynamoDB table.
+
+The source code of this lambda function can be accesed in `predict_air_quality.py` file in this repository.
+
+## Credit
+
+1. [Analyze data in Amazon DynamoDB using Amazon SageMaker for real-time prediction | AWS Big Data Blog](https://aws.amazon.com/blogs/big-data/analyze-data-in-amazon-dynamodb-using-amazon-sagemaker-for-real-time-prediction/)
+2. [Boto 3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+
+## Etcs
 
 [Full report of SIPAKU](https://docs.google.com/document/d/1IfSTj5QtwFh-Ooi6DRjt3teGczYhdKKIbzEIaCpWcuU) (Bahasa Indonesia)

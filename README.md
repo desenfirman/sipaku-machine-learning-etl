@@ -9,6 +9,8 @@ SIPAKU Main Repository:
 
 ## A Brief Repository Structure
 
+Below are repository structure with some description alongside file or directory.
+
 ```text
 sipaku-machine-learning-etl/
 |

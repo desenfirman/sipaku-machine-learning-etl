@@ -47,25 +47,25 @@ After the first task is complete, we got a dumped data from DynamoDB. But the pr
 This automation script is loaded from Amazon S3 and running some Apache Hive query to transform stream-line JSONLine format into time-series .csv file. We also use a json-serde .jar plugin to make Apache Hive can detect JSONLine streamline format. The following partial code show how JSONLine is transformed into time-series .csv.
 
 ```bash
-    #!/bin/bash
+#!/bin/bash
 
-    # Convert DynamoDB export format to CSV for Machine Learning 
-    hive -e "
-    ADD jar s3://machine-learning-sipaku-dataset/json-serde-1.3.6-SNAPSHOT-jar-with-dependencies.jar ;
-    DROP TABLE IF EXISTS sipaku_backup ;
-    CREATE EXTERNAL TABLE sipaku_backup (  
-        Value map<string,string>,
-        Waktu map<string,string>,
-        Tanggal map<string,string>
-    ) 
-    ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  
-    WITH SERDEPROPERTIES ('ignore.malformed.json' = 'true')
-    LOCATION '$1/'
-    ;
+# Convert DynamoDB export format to CSV for Machine Learning 
+hive -e "
+ADD jar s3://machine-learning-sipaku-dataset/json-serde-1.3.6-SNAPSHOT-jar-with-dependencies.jar ;
+DROP TABLE IF EXISTS sipaku_backup ;
+CREATE EXTERNAL TABLE sipaku_backup (  
+    Value map<string,string>,
+    Waktu map<string,string>,
+    Tanggal map<string,string>
+) 
+ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'  
+WITH SERDEPROPERTIES ('ignore.malformed.json' = 'true')
+LOCATION '$1/'
+;
 
-    INSERT OVERWRITE  DIRECTORY 's3://machine-learning-sipaku-dataset/sagemaker/' 
-    SELECT CONCAT(final_table.y, ',', final_table.y_6, ',', final_table.y_5, ',', final_table.y_4, ',', final_table.y_3, ',', final_table.y_2, ',', final_table.y_1) as csv
-    FROM (
+INSERT OVERWRITE  DIRECTORY 's3://machine-learning-sipaku-dataset/sagemaker/' 
+SELECT CONCAT(final_table.y, ',', final_table.y_6, ',', final_table.y_5, ',', final_table.y_4, ',', final_table.y_3, ',', final_table.y_2, ',', final_table.y_1) as csv
+FROM (
         SELECT 
             LAG(sipaku_avg.avgr, 6) OVER (ORDER BY sipaku_avg.tgl) as y_6, 
             LAG(sipaku_avg.avgr, 5) OVER (ORDER BY sipaku_avg.tgl) as y_5, 
@@ -79,13 +79,14 @@ This automation script is loaded from Amazon S3 and running some Apache Hive que
             FROM sipaku_backup
             GROUP BY Tanggal['s']) as sipaku_avg
         ) as final_table
-    WHERE final_table.y_6 IS NOT NULL
-    ;
-    "
-    if [ $? -ne 0 ]; then 
-    echo "Error while running Hive SQL, Location - $1 "
-    exit 1 ;
-    fi
+WHERE final_table.y_6 IS NOT NULL
+;
+"
+if [ $? -ne 0 ]; then 
+echo "Error while running Hive SQL, Location - $1 "
+exit 1 ;
+fi
+
 ```
 
 ## Machine Learning Train-n-Deploy

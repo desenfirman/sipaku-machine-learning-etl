@@ -4,8 +4,8 @@ Part of SIPAKU (Sistem Pemantau Kualitas Udara)
 
 SIPAKU Main Repository:
 
-- from user:[desenfirman](https://github.com/desenfirman/sipaku) (forked repository)
-- from user:[thomasariyanto](https://github.com/thomasaryanto/sipaku) (repository owner)
+- from user: [desenfirman](https://github.com/desenfirman/sipaku) (forked repository)
+- from user: [thomasariyanto](https://github.com/thomasaryanto/sipaku) (repository owner)
 
 ## A Brief Repository Structure
 
@@ -93,7 +93,7 @@ fi
 
 ## Machine Learning Train-n-Deploy
 
-After the DataPipeline phase is completed, then we perform some Machine Learning train n deploy task using AWS SageMaker. Briefly, AWS SageMaker is a service that provide a machine learning task like training and deploy model.
+After the DataPipeline phase is completed, then we perform some Machine Learning train-n-deploy task using AWS SageMaker. Briefly, AWS SageMaker is a service that provide a machine learning task like training and deploy model.
 
 The training task can be achieved from AWS SageMaker Web Console. But we dont want to run training process manually by opening web console after ETL process is complete. Instead, we try to utilize some resource power from last ETL process to run a training task automatically. We run aws-cli inside those machine seamlessly to perform a training [plus] model deployment after ETL task is complete.
 
@@ -111,11 +111,11 @@ We use AWS Lambda function to generate a prediction. The function will grab last
 
 The source code of this lambda function can be accesed in `predict_air_quality.py` file in this repository.
 
-## Credit
+## Credit(s)
 
 1. [Analyze data in Amazon DynamoDB using Amazon SageMaker for real-time prediction | AWS Big Data Blog](https://aws.amazon.com/blogs/big-data/analyze-data-in-amazon-dynamodb-using-amazon-sagemaker-for-real-time-prediction/)
 2. [Boto 3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
 
-## Etcs
+## Etc(s)
 
 [Full report of SIPAKU](https://docs.google.com/document/d/1IfSTj5QtwFh-Ooi6DRjt3teGczYhdKKIbzEIaCpWcuU) (Bahasa Indonesia)
